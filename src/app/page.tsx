@@ -111,55 +111,67 @@ export default function LandingPage() {
     // Verificar se usuário tem assinatura ativa
     setHasSubscription(hasActiveSubscription());
 
-    // URL de retorno após pagamento
-    const successUrl = `${window.location.origin}/payment/success`;
+    // Função auxiliar para injetar script com segurança e tratamento de erros robusto
+    const injectMercadoPagoScript = (buttonId: string, preferenceId: string) => {
+      try {
+        const button = document.getElementById(buttonId);
+        if (!button) return null;
 
-    // Carregar o script do Mercado Pago para o botão diário
-    const scriptDaily = document.createElement('script');
-    scriptDaily.src = "https://www.mercadopago.com.br/integrations/v1/web-payment-checkout.js";
-    scriptDaily.setAttribute('data-preference-id', '245781992-28fd724e-300a-4c97-8800-d8c70d63b814');
-    scriptDaily.setAttribute('data-source', 'button');
-    scriptDaily.setAttribute('data-button-label', 'Começar Agora');
-    
-    const dailyButton = document.getElementById('daily-payment-button');
-    if (dailyButton) {
-      dailyButton.appendChild(scriptDaily);
-    }
+        // Verificar se já existe um script neste botão
+        const existingScript = button.querySelector('script[data-preference-id]');
+        if (existingScript) return existingScript;
 
-    // Carregar o script do Mercado Pago para o botão mensal
-    const scriptMonthly = document.createElement('script');
-    scriptMonthly.src = "https://www.mercadopago.com.br/integrations/v1/web-payment-checkout.js";
-    scriptMonthly.setAttribute('data-preference-id', '245781992-f2eb9b89-6593-434e-befb-4263e4e2c8ec');
-    scriptMonthly.setAttribute('data-source', 'button');
-    scriptMonthly.setAttribute('data-button-label', 'Começar Agora');
-    
-    const monthlyButton = document.getElementById('monthly-payment-button');
-    if (monthlyButton) {
-      monthlyButton.appendChild(scriptMonthly);
-    }
+        // Criar novo script
+        const script = document.createElement('script');
+        script.src = "https://www.mercadopago.com.br/integrations/v1/web-payment-checkout.js";
+        script.setAttribute('data-preference-id', preferenceId);
+        script.setAttribute('data-source', 'button');
+        script.setAttribute('data-button-label', 'Começar Agora');
+        
+        // Adicionar handlers de erro silenciosos
+        script.onerror = (e) => {
+          // Silenciar erros do Mercado Pago para evitar poluição do console
+        };
 
-    // Carregar o script do Mercado Pago para o botão anual
-    const scriptAnnual = document.createElement('script');
-    scriptAnnual.src = "https://www.mercadopago.com.br/integrations/v1/web-payment-checkout.js";
-    scriptAnnual.setAttribute('data-preference-id', '245781992-216c8c46-842e-4b01-93d1-214f5c91deb4');
-    scriptAnnual.setAttribute('data-source', 'button');
-    scriptAnnual.setAttribute('data-button-label', 'Começar Agora');
-    
-    const annualButton = document.getElementById('annual-payment-button');
-    if (annualButton) {
-      annualButton.appendChild(scriptAnnual);
-    }
+        button.appendChild(script);
+        return script;
+      } catch (error) {
+        // Silenciar erros de injeção de script
+        return null;
+      }
+    };
 
+    // Injetar scripts para cada botão com tratamento de erro
+    const scriptDaily = injectMercadoPagoScript(
+      'daily-payment-button',
+      '245781992-28fd724e-300a-4c97-8800-d8c70d63b814'
+    );
+
+    const scriptMonthly = injectMercadoPagoScript(
+      'monthly-payment-button',
+      '245781992-f2eb9b89-6593-434e-befb-4263e4e2c8ec'
+    );
+
+    const scriptAnnual = injectMercadoPagoScript(
+      'annual-payment-button',
+      '245781992-216c8c46-842e-4b01-93d1-214f5c91deb4'
+    );
+
+    // Cleanup seguro com verificações adicionais
     return () => {
-      if (dailyButton && scriptDaily.parentNode === dailyButton) {
-        dailyButton.removeChild(scriptDaily);
-      }
-      if (monthlyButton && scriptMonthly.parentNode === monthlyButton) {
-        monthlyButton.removeChild(scriptMonthly);
-      }
-      if (annualButton && scriptAnnual.parentNode === annualButton) {
-        annualButton.removeChild(scriptAnnual);
-      }
+      const safeRemoveScript = (script: HTMLScriptElement | null) => {
+        try {
+          if (script && script.parentNode && document.body.contains(script)) {
+            script.parentNode.removeChild(script);
+          }
+        } catch (error) {
+          // Silenciar erros de remoção
+        }
+      };
+
+      safeRemoveScript(scriptDaily);
+      safeRemoveScript(scriptMonthly);
+      safeRemoveScript(scriptAnnual);
     };
   }, []);
 
