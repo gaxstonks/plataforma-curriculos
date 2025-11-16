@@ -111,6 +111,9 @@ export default function LandingPage() {
     // Verificar se usuário tem assinatura ativa
     setHasSubscription(hasActiveSubscription());
 
+    // URL de retorno após pagamento
+    const successUrl = `${window.location.origin}/payment/success`;
+
     // Carregar o script do Mercado Pago para o botão diário
     const scriptDaily = document.createElement('script');
     scriptDaily.src = "https://www.mercadopago.com.br/integrations/v1/web-payment-checkout.js";

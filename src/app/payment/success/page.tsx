@@ -1,127 +1,128 @@
 "use client";
 
-import { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { CheckCircle, Download, Home } from 'lucide-react';
-import Link from 'next/link';
+import { useEffect, useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { CheckCircle, Loader2, XCircle } from "lucide-react";
 
 export default function PaymentSuccessPage() {
   const searchParams = useSearchParams();
-  const paymentId = searchParams.get('payment_id');
-  const [subscription, setSubscription] = useState<any>(null);
+  const router = useRouter();
+  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const [message, setMessage] = useState('Processando seu pagamento...');
 
   useEffect(() => {
-    // Verificar pagamento e obter informações da assinatura
-    if (paymentId) {
-      // Salvar no localStorage temporariamente
-      const subscriptionData = {
-        paymentId,
-        plan: searchParams.get('plan') || 'monthly',
-        status: 'active',
-        activatedAt: new Date().toISOString(),
-        expiresAt: calculateExpirationDate(searchParams.get('plan') || 'monthly')
-      };
+    // Obter parâmetros da URL do Mercado Pago
+    const paymentId = searchParams.get('payment_id');
+    const paymentStatus = searchParams.get('status');
+    const merchantOrderId = searchParams.get('merchant_order_id');
+    const preferenceId = searchParams.get('preference_id');
+    const collectionStatus = searchParams.get('collection_status');
+
+    // Mapear preference_id para plano
+    const planMap: { [key: string]: 'daily' | 'monthly' | 'annual' } = {
+      '245781992-28fd724e-300a-4c97-8800-d8c70d63b814': 'daily',
+      '245781992-f2eb9b89-6593-434e-befb-4263e4e2c8ec': 'monthly',
+      '245781992-216c8c46-842e-4b01-93d1-214f5c91deb4': 'annual'
+    };
+
+    const plan = preferenceId ? planMap[preferenceId] : null;
+
+    // Verificar se o pagamento foi aprovado
+    if (paymentStatus === 'approved' || collectionStatus === 'approved') {
+      if (paymentId && plan) {
+        // Calcular data de expiração baseada no plano
+        const now = new Date();
+        const expiresAt = new Date(now);
+        
+        switch (plan) {
+          case 'daily':
+            expiresAt.setDate(expiresAt.getDate() + 1);
+            break;
+          case 'monthly':
+            expiresAt.setMonth(expiresAt.getMonth() + 1);
+            break;
+          case 'annual':
+            expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+            break;
+        }
+
+        // Salvar assinatura no localStorage
+        const subscription = {
+          paymentId: paymentId,
+          plan: plan,
+          status: 'active' as const,
+          activatedAt: now.toISOString(),
+          expiresAt: expiresAt.toISOString()
+        };
+
+        localStorage.setItem('subscription', JSON.stringify(subscription));
+
+        setStatus('success');
+        setMessage('Pagamento confirmado! Sua assinatura está ativa.');
+
+        // Redirecionar para a home após 3 segundos
+        setTimeout(() => {
+          router.push('/');
+        }, 3000);
+      } else {
+        setStatus('error');
+        setMessage('Erro ao processar pagamento. Informações incompletas.');
+      }
+    } else if (paymentStatus === 'pending' || collectionStatus === 'pending') {
+      setStatus('loading');
+      setMessage('Pagamento pendente. Aguardando confirmação...');
       
-      localStorage.setItem('subscription', JSON.stringify(subscriptionData));
-      setSubscription(subscriptionData);
+      // Redirecionar após 5 segundos
+      setTimeout(() => {
+        router.push('/');
+      }, 5000);
+    } else {
+      setStatus('error');
+      setMessage('Pagamento não foi aprovado. Tente novamente.');
     }
-  }, [paymentId, searchParams]);
-
-  const calculateExpirationDate = (plan: string) => {
-    const now = new Date();
-    switch (plan) {
-      case 'daily':
-        now.setDate(now.getDate() + 1);
-        break;
-      case 'monthly':
-        now.setMonth(now.getMonth() + 1);
-        break;
-      case 'annual':
-        now.setFullYear(now.getFullYear() + 1);
-        break;
-    }
-    return now.toISOString();
-  };
-
-  const getPlanName = (plan: string) => {
-    switch (plan) {
-      case 'daily': return 'Diário';
-      case 'monthly': return 'Mensal';
-      case 'annual': return 'Anual';
-      default: return 'Desconhecido';
-    }
-  };
+  }, [searchParams, router]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50 dark:from-gray-900 dark:via-gray-800 dark:to-green-950 flex items-center justify-center p-4">
-      <Card className="max-w-2xl w-full p-8 md:p-12 text-center">
-        <div className="w-20 h-20 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-6">
-          <CheckCircle className="w-12 h-12 text-green-600" />
-        </div>
-
-        <h1 className="text-3xl md:text-4xl font-bold mb-4 text-gray-900 dark:text-white">
-          Pagamento Confirmado! 🎉
-        </h1>
-
-        <p className="text-lg text-gray-600 dark:text-gray-400 mb-8">
-          Seu pagamento foi processado com sucesso e sua assinatura está ativa.
-        </p>
-
-        {subscription && (
-          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6 mb-8 text-left">
-            <h3 className="font-bold text-lg mb-4">Detalhes da Assinatura</h3>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-400">Plano:</span>
-                <span className="font-semibold">{getPlanName(subscription.plan)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-400">Status:</span>
-                <span className="font-semibold text-green-600">Ativo</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-400">ID do Pagamento:</span>
-                <span className="font-mono text-xs">{paymentId}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-400">Válido até:</span>
-                <span className="font-semibold">
-                  {new Date(subscription.expiresAt).toLocaleDateString('pt-BR')}
-                </span>
-              </div>
-            </div>
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-indigo-950 flex items-center justify-center p-4">
+      <Card className="max-w-md w-full p-8 text-center">
+        {status === 'loading' && (
+          <>
+            <Loader2 className="w-16 h-16 mx-auto mb-4 text-blue-600 animate-spin" />
+            <h1 className="text-2xl font-bold mb-2">Processando Pagamento</h1>
+            <p className="text-gray-600 dark:text-gray-400">{message}</p>
+          </>
         )}
 
-        <div className="space-y-4">
-          <p className="text-gray-700 dark:text-gray-300 font-medium">
-            Agora você pode baixar seu currículo em PDF quantas vezes quiser!
-          </p>
+        {status === 'success' && (
+          <>
+            <CheckCircle className="w-16 h-16 mx-auto mb-4 text-green-600" />
+            <h1 className="text-2xl font-bold mb-2 text-green-600">Pagamento Confirmado!</h1>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">{message}</p>
+            <p className="text-sm text-gray-500">Redirecionando em 3 segundos...</p>
+            <Button 
+              onClick={() => router.push('/')}
+              className="mt-4 bg-gradient-to-r from-blue-600 to-purple-600"
+            >
+              Ir para Home
+            </Button>
+          </>
+        )}
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/">
-              <Button size="lg" className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white">
-                <Download className="w-5 h-5 mr-2" />
-                Baixar Meu Currículo
-              </Button>
-            </Link>
-
-            <Link href="/">
-              <Button size="lg" variant="outline">
-                <Home className="w-5 h-5 mr-2" />
-                Voltar ao Início
-              </Button>
-            </Link>
-          </div>
-        </div>
-
-        <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
-          <p className="text-sm text-blue-700 dark:text-blue-300">
-            💡 <strong>Dica:</strong> Você pode editar e baixar seu currículo quantas vezes quiser durante o período da sua assinatura.
-          </p>
-        </div>
+        {status === 'error' && (
+          <>
+            <XCircle className="w-16 h-16 mx-auto mb-4 text-red-600" />
+            <h1 className="text-2xl font-bold mb-2 text-red-600">Erro no Pagamento</h1>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">{message}</p>
+            <Button 
+              onClick={() => router.push('/')}
+              variant="outline"
+            >
+              Voltar para Home
+            </Button>
+          </>
+        )}
       </Card>
     </div>
   );
