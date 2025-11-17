@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CurrículoPro - Crie Currículos Profissionais",
+  title: "CurrículoPlus - Crie Currículos Profissionais",
   description: "Crie currículos impressionantes e personalizados em minutos com nossos modelos profissionais",
 };
 
