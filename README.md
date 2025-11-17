@@ -34,3 +34,12 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+
+## Integrations added by assistant
+- Prisma schema in `prisma/schema.prisma` (run `npx prisma migrate dev` locally)
+- DB helper: `src/lib/db.ts`
+- Stripe helper: `src/lib/stripe.ts` and webhook at `pages/api/stripe-webhook.ts`
+- Environment example: `.env.example`
+
+Fill env vars and deploy to Vercel. Vercel will install new dependencies during build.

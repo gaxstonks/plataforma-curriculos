@@ -70,7 +70,12 @@
     "@supabase/supabase-js": "^2.48.1",
     "tailwind-merge": "^3.3.1",
     "vaul": "^1.1.2",
-    "zod": "^3.25.76"
+    "zod": "^3.25.76",
+    "stripe": "^12.0.0",
+    "pg": "^8.10.0",
+    "prisma": "^4.20.0",
+    "@prisma/client": "^4.20.0",
+    "mercadopago": "^2.3.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
