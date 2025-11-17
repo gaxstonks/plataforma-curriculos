@@ -111,6 +111,18 @@ export default function LandingPage() {
     // Verificar se usuário tem assinatura ativa
     setHasSubscription(hasActiveSubscription());
 
+    // Verificar se veio de um pagamento bem-sucedido
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentStatus = urlParams.get('status');
+    const paymentId = urlParams.get('payment_id');
+    const plan = urlParams.get('plan');
+
+    if (paymentStatus === 'approved' && paymentId && plan) {
+      // Redirecionar para página de sucesso
+      window.location.href = `/payment-success?payment_id=${paymentId}&status=${paymentStatus}&plan=${plan}`;
+      return;
+    }
+
     // Função auxiliar para injetar script com segurança e tratamento de erros robusto
     const injectMercadoPagoScript = (buttonId: string, preferenceId: string) => {
       try {
