@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, Download, ArrowRight, Sparkles } from "lucide-react";
 import { activateSubscription, getSubscription } from "@/lib/subscription";
+import { toast } from "sonner";
 
 function PaymentSuccessContent() {
   const searchParams = useSearchParams();
@@ -29,6 +30,12 @@ function PaymentSuccessContent() {
       setSubscription(sub);
       
       setIsProcessing(false);
+
+      // Exibir notificação de sucesso
+      toast.success("🎉 Pagamento confirmado com sucesso!", {
+        description: "Seus downloads em PDF foram liberados. Aproveite!",
+        duration: 5000,
+      });
     } else {
       // Se não houver parâmetros válidos, redirecionar para home
       setTimeout(() => {
@@ -39,7 +46,9 @@ function PaymentSuccessContent() {
 
   const handleDownloadPDF = () => {
     // Aqui você implementaria a geração real do PDF
-    alert("✅ Download iniciado! Seu currículo em PDF está sendo gerado...");
+    toast.success("✅ Download iniciado!", {
+      description: "Seu currículo em PDF está sendo gerado...",
+    });
   };
 
   const handleCreateResume = () => {
